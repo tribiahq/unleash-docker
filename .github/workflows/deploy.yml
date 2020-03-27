@@ -17,7 +17,7 @@ jobs:
     env:
       DOCKER_IMAGE_REGISTRY: ${{ secrets.REGISTRY_NAME_DEV }}.azurecr.io/tribia
       DOCKER_IMAGE: unleash
-      DOCKER_IMAGE_TAG: 3.2.1
+      DOCKER_IMAGE_TAG: 3.2.2
       REGISTRY_NAME: ${{ secrets.REGISTRY_NAME_DEV }}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

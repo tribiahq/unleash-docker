@@ -3,38 +3,25 @@
 const { User, AuthenticationRequired } = require('unleash-server');
 
 const passport = require('passport');
-const CookieStrategy = require('passport-cookie').Strategy;
+const headerStrategy = require('passport-http-header-strategy').Strategy;
 
-passport.use(new CookieStrategy(
-  { cookieName: "_oauth2_proxy" }, 
-  (token, done) => {
-    if (!token || token.indexOf('|') == -1) {
-      // Should never get here, because non-authenticated users or users with broken cookies should
-      // never pass the oauth2-proxy service
-      return done(Error("Invalid _oauth2_proxy cookie"), null);
-    }
-    var userInfoJson = Buffer.from(token.split('|')[0], 'base64').toString('utf-8'); // f.e. {"Email":"pavel.titenkov@gmail.com","User":"titenkov"}
-    var userInfo = JSON.parse(userInfoJson);
-    if (token) {
-      return done(
-        null,
-        new User({
-          name: userInfo.User,
-          email: userInfo.Email
-        })
-      );
-    }
-    return done(Error("No _oauth2_proxy cookie found in request"), null);
+passport.use(new headerStrategy(
+  { header: "x-auth-request-user", passReqToCallback: true },
+  (req, user, done) => {
+    return done(
+      null,
+      new User({
+        name: user,
+        email: req.header('x-auth-request-email')
+      })
+    );
   }
 ));
 
-const authenticate = passport.authenticate('cookie', { session: false });
+const authenticate = passport.authenticate('header', { session: false });
 
 function enableOauth2ProxyAuthentication(app) {
   app.use(passport.initialize());
-
-  passport.serializeUser((user, done) => done(null, user));
-  passport.deserializeUser((user, done) => done(null, user));
 
   app.use('/api/admin', (req, res, next) => {
     authenticate(req, res, function (err) {
@@ -49,7 +36,7 @@ function enableOauth2ProxyAuthentication(app) {
           )
           .end();
       }
-      
+
       next();
     });
   });
